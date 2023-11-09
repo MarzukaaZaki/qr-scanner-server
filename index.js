@@ -17,7 +17,7 @@ const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password:`${process.env.VITE_DB_PASSWORD}`,
-    database:'db_demo'
+    database:'qrcode_db'
 })
 
 // Add a 'connect' event listener
@@ -33,6 +33,49 @@ db.connect((error) => {
 // Defines port in which the server is to be launched
 // During deployment it will assign any of the available ports to our server.
 const port = process.env.PORT || 5000;
+
+app.get('/qrcodes', (req, res) =>{
+    const getQuery = 'SELECT * FROM qrinfo';
+    db.query(getQuery, (error, result)=>{
+        if(error){
+            console.error('Error fetching data:', error);
+            res.status(500).json({ error: 'An error occurred while fetching data.' });
+        }
+        else{
+            res.json(result);
+        }
+    })
+})
+app.post('/qrcodes', (req, res)=>{
+    const { content, thumbnail, scannedOn} = req.body;
+    const postQuery = 'INSERT INTO qrinfo (content, thumbnail, scanned_date) VALUES (?, ?, ?)';
+    
+    db.query(postQuery,[content, thumbnail, scannedOn], (error, result)=>{
+        if(error){
+            console.error('Error saving data', error)
+        }
+        else{
+            console.log('Data saved successfully', result.insertedId)
+            res.send('Data saved successfully')
+        }
+    })
+})
+
+app.delete('/qrcodes/:id', (req, res)=>{
+    const { id } = req.params;
+    const deleteQuery = 'DELETE FROM qrinfo WHERE id = ?';
+
+    db.query(deleteQuery,[id], (error, result)=>{
+        if (error){
+            console.error('Failed to delete query', error);
+            res.status(500).json({error: "Failure reported in deleting entry"});
+        }
+        else{
+            console.log('Deleted entry');
+            res.json({message:'Deleted entry successfully'});
+        }
+    })
+})
 
 // Defining a URL and the response the users will get when they go to that url.
 app.get('/', (request, response) =>{
